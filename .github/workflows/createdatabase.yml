@@ -1,0 +1,65 @@
+on:
+  issues:
+    types: [opened,reopened]
+
+name: Create Database
+jobs:
+  add_article:
+    runs-on: self-hosted
+    if: contains(github.event.issue.labels.*.name, 'database')
+    permissions:
+      issues: write      # Add this to ensure proper permissions
+      contents: read     # Add this if you need repo access
+
+    steps:
+    - name: Issue Forms Body Parser
+      id: parse
+      uses: zentered/issue-forms-body-parser@v2.0.0
+  
+    - name: lets see what we got
+      shell: pwsh
+      run: |
+        $results = '${{ toJSON(steps.parse.outputs.data) }}'
+        $results = $results | ConvertFrom-Json 
+
+        $finalRes = $results | ConvertFrom-Json # not sure why we need 2?
+
+        Write-Host ('SQL Server: {0}' -f $finalRes.'sqlserver'.text)
+        Write-Host ('Database: {0}' -f $finalRes.'database'.text)
+        Write-Host ('Recovery Model: {0}' -f $finalRes.'recoverymodel'.text)
+
+    - name: Do we have dbatools?
+      shell: pwsh
+      run: |
+        Get-Module dbatools -ListAvailable
+
+    - name: Add the database
+      shell: pwsh
+      run: |
+        $results = '${{ toJSON(steps.parse.outputs.data) }}'
+        $results = $results | ConvertFrom-Json 
+
+        $finalRes = $results | ConvertFrom-Json # not sure why we need to do this twice?
+
+        Write-Host ('SQL Server: {0}' -f $finalRes.'sqlserver'.text)
+        Write-Host ('Database: {0}' -f $finalRes.'database'.text)
+        Write-Host ('Recovery Model: {0}' -f $finalRes.'recoverymodel'.text)
+        try {
+          $db = @{
+              SqlInstance     = $finalRes.'sqlserver'.text
+              Name            = $finalRes.'database'.text
+              RecoveryModel   = $finalRes.'recoverymodel'.text
+            }
+            New-DbaDatabase @db
+        } catch {
+          Throw $_
+        }
+            
+    - name: Close Issue
+      shell: pwsh
+      run: |
+        gh auth login --with-token $env:GITHUB_TOKEN
+        gh issue close ${{ github.event.issue.number }} -R JessAndRob/BeyondTheBook
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
+

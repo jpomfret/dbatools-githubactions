@@ -1,0 +1,30 @@
+name: Add a Database to a SQL Server
+description: Add a database to SQL Server
+title: "[DB]: "
+labels: "database"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Let's add a database to SQL Server on sql1.
+  - type: input
+    id: sqlserver
+    attributes:
+      label: SQL Server
+      description: The SQL Server instance to add the database to.
+    validations:
+      required: true
+  - type: input
+    id: database
+    attributes:
+      label: Database
+      description: Name of the database to create.
+    validations:
+      required: true
+  - type: input
+    id: recoverymodel
+    attributes:
+      label: Recovery Model
+      description: The recovery model for the database.
+    validations:
+      required: true
