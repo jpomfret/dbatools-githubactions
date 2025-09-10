@@ -4,7 +4,7 @@ on:
 
 name: Create Database
 jobs:
-  add_article:
+  add_database:
     runs-on: self-hosted
     if: contains(github.event.issue.labels.*.name, 'database')
     permissions:
@@ -22,8 +22,12 @@ jobs:
         $results = '${{ toJSON(steps.parse.outputs.data) }}'
         $results = $results | ConvertFrom-Json 
 
+        $results
+
         $finalRes = $results | ConvertFrom-Json # not sure why we need 2?
 
+        $finalRes
+        
         Write-Host ('SQL Server: {0}' -f $finalRes.'sqlserver'.text)
         Write-Host ('Database: {0}' -f $finalRes.'database'.text)
         Write-Host ('Recovery Model: {0}' -f $finalRes.'recoverymodel'.text)
