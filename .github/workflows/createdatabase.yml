@@ -27,10 +27,10 @@ jobs:
         $finalRes = $results | ConvertFrom-Json # not sure why we need 2?
 
         $finalRes
-        
-        Write-Host ('SQL Server: {0}' -f $finalRes.'sqlserver'.text)
+
+        Write-Host ('SQL Server: {0}' -f $finalRes.'sql-server'.text)
         Write-Host ('Database: {0}' -f $finalRes.'database'.text)
-        Write-Host ('Recovery Model: {0}' -f $finalRes.'recoverymodel'.text)
+        Write-Host ('Recovery Model: {0}' -f $finalRes.'recovery-model'.text)
 
     - name: Do we have dbatools?
       shell: pwsh
@@ -45,14 +45,14 @@ jobs:
 
         $finalRes = $results | ConvertFrom-Json # not sure why we need to do this twice?
 
-        Write-Host ('SQL Server: {0}' -f $finalRes.'sqlserver'.text)
+        Write-Host ('SQL Server: {0}' -f $finalRes.'sql-server'.text)
         Write-Host ('Database: {0}' -f $finalRes.'database'.text)
-        Write-Host ('Recovery Model: {0}' -f $finalRes.'recoverymodel'.text)
+        Write-Host ('Recovery Model: {0}' -f $finalRes.'recovery-model'.text)
         try {
           $db = @{
-              SqlInstance     = $finalRes.'sqlserver'.text
+              SqlInstance     = $finalRes.'sql-server'.text
               Name            = $finalRes.'database'.text
-              RecoveryModel   = $finalRes.'recoverymodel'.text
+              RecoveryModel   = $finalRes.'recovery-model'.text
             }
             New-DbaDatabase @db
         } catch {
