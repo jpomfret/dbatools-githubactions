@@ -9,4 +9,6 @@ BEGIN
     GROUP BY c.CatName
     ORDER BY MemeCount DESC;
 END
+
 GO
+

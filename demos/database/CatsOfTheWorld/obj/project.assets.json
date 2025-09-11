@@ -105,11 +105,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "c:\\GitHub\\dbatools-githubactions\\demos\\Database\\CatsOfTheWorld\\CatsOfTheWorld.sqlproj",
+      "projectUniqueName": "c:\\GitHub\\dbatools-githubactions\\demos\\database\\CatsOfTheWorld\\CatsOfTheWorld.sqlproj",
       "projectName": "CatsOfTheWorld",
-      "projectPath": "c:\\GitHub\\dbatools-githubactions\\demos\\Database\\CatsOfTheWorld\\CatsOfTheWorld.sqlproj",
+      "projectPath": "c:\\GitHub\\dbatools-githubactions\\demos\\database\\CatsOfTheWorld\\CatsOfTheWorld.sqlproj",
       "packagesPath": "C:\\Users\\JessPomfret\\.nuget\\packages\\",
-      "outputPath": "c:\\GitHub\\dbatools-githubactions\\demos\\Database\\CatsOfTheWorld\\obj\\",
+      "outputPath": "c:\\GitHub\\dbatools-githubactions\\demos\\database\\CatsOfTheWorld\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\JessPomfret\\AppData\\Roaming\\NuGet\\NuGet.Config"

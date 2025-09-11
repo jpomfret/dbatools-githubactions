@@ -3,20 +3,12 @@
   <Sdk Name="Microsoft.Build.Sql" Version="1.0.0" />
   <PropertyGroup>
     <Name>CatsOfTheWorld</Name>
-    <ProjectGuid>{DD0974D2-CACC-40B5-92E7-1639AC229142}</ProjectGuid>
-    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql160DatabaseSchemaProvider</DSP>
+    <ProjectGuid>{6F58992E-6115-42B9-BF05-9A567BAB7570}</ProjectGuid>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql150DatabaseSchemaProvider</DSP>
     <ModelCollation>1033, CI</ModelCollation>
-  <EnableDefaultSqlItems>false</EnableDefaultSqlItems>
   </PropertyGroup>
   <ItemGroup>
     <None Include=".vscode\tasks.json" />
-    <Build Include="Tables\Breeds.sql" />
-    <Build Include="Tables\Cats.sql" />
-    <Build Include="Tables\Memes.sql" />
-    <Build Include="Tables\Toys.sql" />
-    <Build Include="Tables\ToyPreferences.sql" />
-    <Build Include="Stored Procedures\GetCatPopularityReport.sql" />
-    <Build Include="Stored Procedures\GetTopMemedCats.sql" />
   </ItemGroup>
   <Target Name="BeforeBuild">
     <Delete Files="$(BaseIntermediateOutputPath)\project.assets.json" />

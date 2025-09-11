@@ -1,5 +1,5 @@
 is_global = true
 build_property.RootNamespace = 
-build_property.ProjectDir = c:\GitHub\dbatools-githubactions\demos\database\CatsOfTheWorld\
+build_property.ProjectDir = c:\GitHub\dbatools-githubactions\demos\test\DatabaseProjectCatsOfTheWorld\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 

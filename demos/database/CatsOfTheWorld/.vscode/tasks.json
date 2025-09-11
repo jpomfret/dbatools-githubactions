@@ -9,7 +9,7 @@
 			"isBackground": true,
 			"group": {
 				"kind": "build",
-				"isDefault": "false"
+				"isDefault": "true"
 			},
 			"detail": "Builds the SQL project"
 		}

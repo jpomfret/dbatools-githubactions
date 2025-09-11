@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "c:\\GitHub\\dbatools-githubactions\\demos\\database\\CatsOfTheWorld\\CatsOfTheWorld.sqlproj": {}
+    "c:\\GitHub\\dbatools-githubactions\\demos\\test\\DatabaseProjectCatsOfTheWorld\\DatabaseProjectCatsOfTheWorld.sqlproj": {}
   },
   "projects": {
-    "c:\\GitHub\\dbatools-githubactions\\demos\\database\\CatsOfTheWorld\\CatsOfTheWorld.sqlproj": {
+    "c:\\GitHub\\dbatools-githubactions\\demos\\test\\DatabaseProjectCatsOfTheWorld\\DatabaseProjectCatsOfTheWorld.sqlproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\GitHub\\dbatools-githubactions\\demos\\database\\CatsOfTheWorld\\CatsOfTheWorld.sqlproj",
-        "projectName": "CatsOfTheWorld",
-        "projectPath": "c:\\GitHub\\dbatools-githubactions\\demos\\database\\CatsOfTheWorld\\CatsOfTheWorld.sqlproj",
+        "projectUniqueName": "c:\\GitHub\\dbatools-githubactions\\demos\\test\\DatabaseProjectCatsOfTheWorld\\DatabaseProjectCatsOfTheWorld.sqlproj",
+        "projectName": "DatabaseProjectCatsOfTheWorld",
+        "projectPath": "c:\\GitHub\\dbatools-githubactions\\demos\\test\\DatabaseProjectCatsOfTheWorld\\DatabaseProjectCatsOfTheWorld.sqlproj",
         "packagesPath": "C:\\Users\\JessPomfret\\.nuget\\packages\\",
-        "outputPath": "c:\\GitHub\\dbatools-githubactions\\demos\\database\\CatsOfTheWorld\\obj\\",
+        "outputPath": "c:\\GitHub\\dbatools-githubactions\\demos\\test\\DatabaseProjectCatsOfTheWorld\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\JessPomfret\\AppData\\Roaming\\NuGet\\NuGet.Config"

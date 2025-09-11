@@ -1,0 +1,12 @@
+c:\GitHub\dbatools-githubactions\demos\test\DatabaseProjectCatsOfTheWorld\bin\Debug\DatabaseProjectCatsOfTheWorld.dacpac
+c:\GitHub\dbatools-githubactions\demos\test\DatabaseProjectCatsOfTheWorld\bin\Debug\DatabaseProjectCatsOfTheWorld.deps.json
+c:\GitHub\dbatools-githubactions\demos\test\DatabaseProjectCatsOfTheWorld\bin\Debug\DatabaseProjectCatsOfTheWorld.dll
+c:\GitHub\dbatools-githubactions\demos\test\DatabaseProjectCatsOfTheWorld\bin\Debug\DatabaseProjectCatsOfTheWorld.pdb
+c:\GitHub\dbatools-githubactions\demos\test\DatabaseProjectCatsOfTheWorld\obj\Debug\DatabaseProjectCatsOfTheWorld.GeneratedMSBuildEditorConfig.editorconfig
+c:\GitHub\dbatools-githubactions\demos\test\DatabaseProjectCatsOfTheWorld\obj\Debug\DatabaseProjectCatsOfTheWorld.sourcelink.json
+c:\GitHub\dbatools-githubactions\demos\test\DatabaseProjectCatsOfTheWorld\obj\Debug\Model.xml
+c:\GitHub\dbatools-githubactions\demos\test\DatabaseProjectCatsOfTheWorld\obj\Debug\refactor.xml
+c:\GitHub\dbatools-githubactions\demos\test\DatabaseProjectCatsOfTheWorld\obj\Debug\postdeploy.sql
+c:\GitHub\dbatools-githubactions\demos\test\DatabaseProjectCatsOfTheWorld\obj\Debug\predeploy.sql
+c:\GitHub\dbatools-githubactions\demos\test\DatabaseProjectCatsOfTheWorld\obj\Debug\DatabaseProjectCatsOfTheWorld.dll
+c:\GitHub\dbatools-githubactions\demos\test\DatabaseProjectCatsOfTheWorld\obj\Debug\DatabaseProjectCatsOfTheWorld.pdb
