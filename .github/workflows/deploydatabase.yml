@@ -1,4 +1,4 @@
-name: Build and release
+name: Build and deploy database
 
 # Set environment variables for all the jobs
 env:
@@ -16,7 +16,7 @@ on:
     branches:
       - main
     paths:
-        - /demos/database/**
+        - demos/database/**
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -45,7 +45,12 @@ jobs:
       # Find msbuild
       - name: 'Add msbuild to PATH'
         uses: microsoft/setup-msbuild@v2
-
+        
+      # Install SQLPackage and DacFx
+      - name: Install Visual Studio Build Tools for SSDT
+        run: |
+          choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.DataBuildTools --includeRecommended --includeOptional --passive --locale en-US"
+        shell: pwsh
       # create dacpac using MSBUILD
       - name: Build Database project
         run: |
