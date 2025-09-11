@@ -6,12 +6,17 @@ body:
   - type: markdown
     attributes:
       value: |
-        Let's add a database to SQL Server on sql1.
-  - type: input
+        Let's add a database to a SQL Server.
+  - type: dropdown
     id: sqlserver
     attributes:
       label: SQL Server
       description: The SQL Server instance to add the database to.
+      multiple: false
+      options:
+        - sql1
+        - sql2
+        - sql3
     validations:
       required: true
   - type: input
@@ -21,10 +26,22 @@ body:
       description: Name of the database to create.
     validations:
       required: true
-  - type: input
+  - type: dropdown
     id: recoverymodel
     attributes:
       label: Recovery Model
       description: The recovery model for the database.
+      multiple: false
+      options:
+        - SIMPLE
+        - FULL
+        - BULK_LOGGED
     validations:
       required: true
+  - type: checkboxes
+    id: deploy
+    attributes:
+      label: Deploy the databse project
+      description: Do you want to deploy the database project after creating the database?
+      options:
+        - label: deploy
