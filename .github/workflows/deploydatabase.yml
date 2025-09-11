@@ -1,0 +1,89 @@
+name: Build and release
+
+# Set environment variables for all the jobs
+env:
+  database: Cats
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+defaults:
+  run:
+    working-directory: ./demos/database/
+
+# Controls when the workflow will run
+on:
+  # Only allow workflow to run after merge has been accepted
+  push:
+    branches:
+      - main
+    paths:
+        - /demos/database/**
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  
+  build:
+    # The type of runner that the job will run on
+    runs-on: windows-latest
+
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v5
+
+      # Cache PowerShell modules
+      - name: Install and cache PowerShell modules
+        uses: potatoqualitee/psmodulecache@v6.2.1
+        with:
+          modules-to-cache: dbatools.library, dbatools
+          shell: powershell, pwsh
+
+      # Find msbuild
+      - name: 'Add msbuild to PATH'
+        uses: microsoft/setup-msbuild@v2
+
+      # create dacpac using MSBUILD
+      - name: Build Database project
+        run: |
+          msbuild CatsOfTheWorld/CatsOfTheWorld.sqlproj /p:NetCoreBuild=true /p:Configuration=Release
+
+      # Prepare artifact files
+      - name: Prepare artifact files
+        shell: powershell
+        run: |
+          New-Item -Path ${{ github.workspace }}/artifacts -ItemType Directory
+
+          Copy-Item -Path ${{ github.workspace }}/CatsOfTheWorld/*.publish.xml -Destination ${{ github.workspace }}/artifacts
+          
+      # Publish artifact
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: Database
+          path: |
+            ${{ github.workspace }}/artifacts/*.*
+            retention-days: 400
+            
+      # Deploy database 
+      - name: Deploy dev database
+        shell: powershell
+
+        env:
+          DB_SVR: sql1
+          database: CatsOfTheWorldDev
+
+        run: |
+          Import-Module dbatools
+
+          # Set these defaults for all future sessions on this machine
+          Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
+          Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
+
+          # Deploy
+          $serverName = $env:DB_SVR
+          $databaseName = $env:database
+          & 'C:\Program Files\Microsoft SQL Server\170\DAC\bin\SqlPackage.exe' /Action:Publish /SourceFile:"${{ github.workspace }}/artifacts/CatsOfTheWorld.dacpac" /Profile:"${{ github.workspace }}/artifacts/CatsOfTheWorld.publish.xml" /TargetDatabaseName:$databaseName /TargetServerName:$serverName
