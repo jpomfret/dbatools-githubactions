@@ -1,4 +1,4 @@
-# SQL Server automation with PowerShell, dbatools and GitHub Actions
+# SQL Server Automation with PowerShell, dbatools and GitHub Actions
 
 ## Session Goals
 
@@ -17,3 +17,18 @@ What you'll learn:
 - Demos and Ideas – I'll show multiple demos, including adding articles to SQL Server replication and deploying database change with sqlpackage.
 
 This session aims to give you a practical understanding of how to combine these technologies to reduce manual effort, minimize human error, and build more reliable and repeatable processes for your SQL Server environments.
+
+## But what if I have Azure DevOps?
+
+Don't worry these tools are similar that you can still take the concepts you learn today and apply to using Azure DevOps.
+
+Translations:
+
+| GitHub Actions      | Azure DevOps      |
+|---------------------|-------------------|
+| Workflow            | Pipeline          |
+| Job                 | Stage             |
+| Step                | Task              |
+| Action              | Task/Extension    |
+| Secret              | Variable (Secret) |
+| Self-Hosted Runner  | Self-Hosted Agent |
