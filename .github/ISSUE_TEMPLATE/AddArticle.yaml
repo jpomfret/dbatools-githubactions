@@ -7,25 +7,40 @@ body:
     attributes:
       value: |
         Let's add an article to replication on sql1.
-  - type: input
+  - type: dropdown
     id: database
     attributes:
       label: Database
       description: Publisher database that contains the article.
+      multiple: false
+      options:
+        - AdventureWorks
+        - AdventureWorksLT2022
+        - WideWorldImporters
     validations:
       required: true
-  - type: input
+  - type: dropdown
     id: publication
     attributes:
       label: Publication
       description: The publication to add the article to.
+      multiple: false
+      options:
+        - testPub
+        - mergey
+        - snappy
     validations:
       required: true
-  - type: input
+  - type: dropdown
     id: schema
     attributes:
       label: Schema
       description: Schema of the article.
+      multiple: false
+      options:
+        - salesLT
+        - production
+        - dbo
     validations:
       required: true
   - type: input
