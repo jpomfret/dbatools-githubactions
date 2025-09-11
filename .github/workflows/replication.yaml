@@ -2,7 +2,7 @@ on:
   issues:
     types: [opened,reopened]
 
-name: Run Command
+name: Add Article to Replication
 jobs:
   add_article:
     runs-on: self-hosted
