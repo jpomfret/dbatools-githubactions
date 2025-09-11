@@ -51,6 +51,14 @@ jobs:
         run: |
           choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.DataBuildTools --includeRecommended --includeOptional --passive --locale en-US"
         shell: pwsh
+
+      - name: Refresh environment variables
+        run: refreshenv
+        shell: pwsh
+
+      - name: Check MSBuild version
+        run: msbuild -version
+
       # create dacpac using MSBUILD
       - name: Build Database project
         run: |
