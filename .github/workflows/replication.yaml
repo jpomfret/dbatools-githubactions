@@ -1,0 +1,70 @@
+on:
+  issues:
+    types: [opened,reopened]
+
+name: Run Command
+jobs:
+  add_article:
+    runs-on: self-hosted
+    if: contains(github.event.issue.labels.*.name, 'replication')
+    permissions:
+      issues: write      # Add this to ensure proper permissions
+      contents: read     # Add this if you need repo access
+
+    steps:
+    - name: Issue Forms Body Parser
+      id: parse
+      uses: zentered/issue-forms-body-parser@v2.0.0
+  
+    - name: lets see what we got
+      shell: pwsh
+      run: |
+        $results = '${{ toJSON(steps.parse.outputs.data) }}'
+        $results = $results | ConvertFrom-Json 
+
+        $finalRes = $results | ConvertFrom-Json # not sure why we need 2?
+
+        Write-Host ('Database: {0}' -f $finalRes.'database'.text)
+        Write-Host ('Publication: {0}' -f $finalRes.'publication'.text)
+        Write-Host ('Schema: {0}' -f $finalRes.'schema'.text)
+        Write-Host ('Article: {0}' -f $finalRes.'article'.text)        
+
+    - name: Do we have dbatools?
+      shell: pwsh
+      run: |
+        Get-Module dbatools -ListAvailable
+
+    - name: Add the article
+      shell: pwsh
+      run: |
+        $results = '${{ toJSON(steps.parse.outputs.data) }}'
+        $results = $results | ConvertFrom-Json 
+
+        $finalRes = $results | ConvertFrom-Json # not sure why we need to do this twice?
+
+        Write-Host ('Database: {0}' -f $finalRes.'database'.text)
+        Write-Host ('Publication: {0}' -f $finalRes.'publication'.text)
+        Write-Host ('Schema: {0}' -f $finalRes.'schema'.text)
+        Write-Host ('Article: {0}' -f $finalRes.'article'.text)        
+        try {
+          $article = @{
+              SqlInstance     = 'sql1'
+              Database        = $finalRes.'database'.text
+              Publication     = $finalRes.'publication'.text
+              Schema          = $finalRes.'schema'.text
+              Name            = $finalRes.'article'.text
+              EnableException = $true
+            }
+            Add-DbaReplArticle @article
+        } catch {
+          Throw $_
+        }
+            
+    - name: Close Issue
+      shell: pwsh
+      run: |
+        gh auth login --with-token $env:GITHUB_TOKEN
+        gh issue close ${{ github.event.issue.number }} -R JessAndRob/BeyondTheBook
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
+
