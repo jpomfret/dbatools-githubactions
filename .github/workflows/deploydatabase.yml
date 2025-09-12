@@ -37,6 +37,9 @@ jobs:
       
       - name: Where am i?
         run: pwd
+      
+      - name: What files do we have?
+        run: ls
 
       - uses: azure/sql-action@v2.3
         with:        
@@ -45,4 +48,4 @@ jobs:
           action: 'publish'
           build-arguments: '-c Release'                 # Optional build options passed to dotnet build
           arguments: '/p:DropObjectsNotInSource=true'   # Optional properties and parameters for SqlPackage Publish
-          sqlpackage-path: 'C:\Program Files\Microsoft SQL Server\170\DAC\bin\'
+          sqlpackage-path: 'C:\Program Files\Microsoft SQL Server\170\DAC\bin\sqlpackage.exe'
