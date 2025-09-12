@@ -45,4 +45,4 @@ jobs:
           action: 'publish'
           build-arguments: '-c Release'                 # Optional build options passed to dotnet build
           arguments: '/p:DropObjectsNotInSource=true'   # Optional properties and parameters for SqlPackage Publish
-          sqlpackage-path: 'C:\Program Files\Microsoft SQL Server\170\DAC\bin\''
+          sqlpackage-path: 'C:\Program Files\Microsoft SQL Server\170\DAC\bin\'
