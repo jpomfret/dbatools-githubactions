@@ -37,9 +37,8 @@ jobs:
       
       - name: Where am i?
         run: pwd
-
       - name: What files do I have?
-        run: ls -la
+        run: echo "/home/runner/sqlpackage/" >> $GITHUB_PATH
       
       - uses: azure/sql-action@v2.3
         with:        
