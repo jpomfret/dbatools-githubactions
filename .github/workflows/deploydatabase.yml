@@ -39,12 +39,12 @@ jobs:
         run: pwd
 
       - name: What files do I have?
-        run: ls -recurse
+        run: ls -la
       
       - uses: azure/sql-action@v2.3
         with:        
           connection-string: ${{ secrets.SQL_CONNECTION_STRING }}
-          path: './CatsOfTheWorld/CatsOfTheWorld.sqlproj'
+          path: './demos/database/CatsOfTheWorld/CatsOfTheWorld.sqlproj'
           action: 'publish'
           build-arguments: '-c Release'                 # Optional build options passed to dotnet build
           arguments: '/p:DropObjectsNotInSource=true'   # Optional properties and parameters for SqlPackage Publish
