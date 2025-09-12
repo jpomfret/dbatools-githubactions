@@ -1,0 +1,5 @@
+{
+    "dataworkspace.excludedProjects": [
+        "_archive/CatsOfTheWorld/CatsOfTheWorld.sqlproj"
+    ]
+}
