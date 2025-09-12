@@ -27,7 +27,7 @@ jobs:
   
   build:
     # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
 
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -47,3 +47,4 @@ jobs:
           action: 'publish'
           build-arguments: '-c Release'                 # Optional build options passed to dotnet build
           arguments: '/p:DropObjectsNotInSource=true'   # Optional properties and parameters for SqlPackage Publish
+          sqlpackage-path: 'C:\Program Files\Microsoft SQL Server\170\DAC\bin\''
