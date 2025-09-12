@@ -35,6 +35,12 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v5
       
+      - name: Where am i?
+        run: pwd
+
+      - name: What files do I have?
+        run: ls -recurse
+      
       - uses: azure/sql-action@v2.3
         with:        
           connection-string: ${{ secrets.SQL_CONNECTION_STRING }}
