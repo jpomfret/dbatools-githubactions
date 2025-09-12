@@ -27,76 +27,18 @@ jobs:
   
   build:
     # The type of runner that the job will run on
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v5
-
-      # Cache PowerShell modules
-      - name: Install and cache PowerShell modules
-        uses: potatoqualitee/psmodulecache@v6.2.1
-        with:
-          modules-to-cache: dbatools.library, dbatools
-          shell: powershell, pwsh
-
-      # Find msbuild
-      - name: 'Add msbuild to PATH'
-        uses: microsoft/setup-msbuild@v2
-        
-      # Install SQLPackage and DacFx
-      - name: Install Visual Studio Build Tools for SSDT
-        run: |
-          choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.DataBuildTools --includeRecommended --includeOptional --passive --locale en-US"
-        shell: pwsh
-
-      - name: Refresh environment variables
-        run: refreshenv
-        shell: pwsh
-
-      - name: Check MSBuild version
-        run: msbuild -version
-
-      # create dacpac using MSBUILD
-      - name: Build Database project
-        run: |
-          msbuild CatsOfTheWorld/CatsOfTheWorld.sqlproj /p:NetCoreBuild=true /p:Configuration=Release
-
-      # Prepare artifact files
-      - name: Prepare artifact files
-        shell: powershell
-        run: |
-          New-Item -Path ${{ github.workspace }}/artifacts -ItemType Directory
-
-          Copy-Item -Path ${{ github.workspace }}/CatsOfTheWorld/*.publish.xml -Destination ${{ github.workspace }}/artifacts
-          
-      # Publish artifact
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4.6.2
-        with:
-          name: Database
-          path: |
-            ${{ github.workspace }}/artifacts/*.*
-            retention-days: 400
-            
-      # Deploy database 
-      - name: Deploy dev database
-        shell: powershell
-
-        env:
-          DB_SVR: sql1
-          database: CatsOfTheWorldDev
-
-        run: |
-          Import-Module dbatools
-
-          # Set these defaults for all future sessions on this machine
-          Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
-          Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
-
-          # Deploy
-          $serverName = $env:DB_SVR
-          $databaseName = $env:database
-          & 'C:\Program Files\Microsoft SQL Server\170\DAC\bin\SqlPackage.exe' /Action:Publish /SourceFile:"${{ github.workspace }}/artifacts/CatsOfTheWorld.dacpac" /Profile:"${{ github.workspace }}/artifacts/CatsOfTheWorld.publish.xml" /TargetDatabaseName:$databaseName /TargetServerName:$serverName
+      
+      - uses: azure/sql-action@v2.3
+        with:        
+          connection-string: ${{ secrets.SQL_CONNECTION_STRING }}
+          path: './CatsOfTheWorld/CatsOfTheWorld.sqlproj'
+          action: 'publish'
+          build-arguments: '-c Release'                 # Optional build options passed to dotnet build
+          arguments: '/p:DropObjectsNotInSource=true'   # Optional properties and parameters for SqlPackage Publish
