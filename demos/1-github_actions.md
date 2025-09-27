@@ -7,7 +7,7 @@ Create simple actions in the browser
 ### Mark stale issues and pull requests
 
 - Go to [Actions](https://github.com/jpomfret/dbatools-githubactions/actions) for the repo
-- Click `New workflow` 
+- Click `New workflow`
   - If you've got a repo with no actions you'll see `Get started with GitHub Actions`
 - search `stale issue`
 - configure the action
@@ -22,7 +22,7 @@ Create simple actions in the browser
 - `Commit changes...` to the repo
 - Kick off the workflow and see what it does
 
-## 
+## AI issue summary
 
 - add `AI issue summary`
   - look at the workflow created
@@ -38,7 +38,7 @@ Create simple actions in the browser
       ```text
         can you create a title and a summary for a funny issue I can add to this sample github repo
         the issue should be quite long and can be formatted in markdown. Make me laugh.
-        I should be able to copy the markdown and paste it into github issue
+        Add it to the bottom of this file in markdown so I can copy it into a GitHub issue.
       ```
 
     - create a new issue with the generated markdown
