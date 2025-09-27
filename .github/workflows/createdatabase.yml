@@ -64,7 +64,7 @@ jobs:
       shell: pwsh
       run: |
         gh auth login --with-token $env:GITHUB_TOKEN
-        gh issue close ${{ github.event.issue.number }} -R JessAndRob/BeyondTheBook
+        gh issue close ${{ github.event.issue.number }} -R jpomfret/dbatools-githubactions
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
 
