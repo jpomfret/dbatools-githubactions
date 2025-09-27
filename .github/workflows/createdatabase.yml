@@ -53,6 +53,7 @@ jobs:
               SqlInstance     = $finalRes.'sql-server'.text
               Name            = $finalRes.'database'.text
               RecoveryModel   = $finalRes.'recovery-model'.text
+              EnableException = $true
             }
             New-DbaDatabase @db
         } catch {
