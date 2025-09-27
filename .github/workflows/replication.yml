@@ -55,7 +55,16 @@ jobs:
               Name            = $finalRes.'article'.text
               EnableException = $true
             }
-            Add-DbaReplArticle @article
+          Add-DbaReplArticle @article
+
+          $job = @{
+            SqlInstance = 'sql1'
+            Category    = 'repl-snapshot'
+          }
+          Get-DbaAgentJob @job | 
+          Where-Object name -like  ('{0}-{1}-{2}*' -f 'sql1', $finalRes.'database'.text, $finalRes.'publication'.text) | 
+          Start-DbaAgentJob -EnableException
+
         } catch {
           Throw $_
         }
