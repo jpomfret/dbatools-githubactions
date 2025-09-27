@@ -8,3 +8,4 @@
 - Open [dbatools-githubactions](https://github.com/jpomfret/dbatools-githubactions/) in browser
 - Make sure the simple actions from demo 1 are deleted 
 - remove stale issue labels
+- remove CatOwners table
