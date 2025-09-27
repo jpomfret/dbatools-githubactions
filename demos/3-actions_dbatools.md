@@ -44,7 +44,7 @@
 
 ## Create database from an issue on GitHub
 
-- look at the [issue template](..\.github\ISSUE_TEMPLATE\AddDatabase.yaml)
+- look at the [issue template](..\.github\ISSUE_TEMPLATE\AddDatabase.yml)
 - look at the [workflow](..\.github\workflows\createdatabase.yml)
 - look at the self-hosted runner on sql1
   - start it up
@@ -67,17 +67,9 @@
   Get-DbaReplArticle -SqlInstance sql1 -Publication testPub | Format-Table
   ```
 
-- look at the issue template
-  
-  ```PowerShell
-  code .\.github\ISSUE_TEMPLATE\AddArticle.yaml
-  ```
+- look at the [issue template](..\.github\ISSUE_TEMPLATE\AddArticle.yml)
+- look at the [workflow](..\.github\workflows\replication.yml)
 
-- look at the action
-
-  ```PowerShell
-  code .\.github\workflows\replication.yaml
-  ```
 
 - GO CREATE AN ISSUE and watch the workflow
   - Database: AdventureWorksLT2022
