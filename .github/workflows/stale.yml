@@ -9,6 +9,8 @@ on:
   schedule:
   - cron: '37 1 * * *'
 
+  workflow_dispatch:
+
 jobs:
   stale:
 
