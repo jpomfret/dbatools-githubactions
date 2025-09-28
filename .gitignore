@@ -1,0 +1,49 @@
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+
+# SQL Server files
+*.mdf
+*.ldf
+*.ndf
+
+# Database project files
+*.dacpac
+*.dll
+*.pdb
+*.deps.json
+
+# Visual Studio files
+.vs/
+*.user
+*.suo
+*.cache
+*.tmp
+*.log
+
+# Temporary files
+*~
+*.swp
+*.swo
+
+# PowerShell files
+*.ps1xml
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
