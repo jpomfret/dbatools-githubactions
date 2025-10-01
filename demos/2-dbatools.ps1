@@ -110,11 +110,16 @@ Get-Help Backup-DbaDatabase -ShowWindow
 
 # What if I have many instances?
 $instances = "sql1", "sql2", "sql3"
-$instances = $inst, $inst
 
 # What if I need to get information from all of them?
 Get-DbaDatabase -SqlInstance $instances |
 Select-Object SqlInstance, Name, CreateDate, AutoShrink, AutoClose
+
+# What if I need to get information from all of them?
+# Add a filter
+Get-DbaDatabase -SqlInstance $instances |
+Select-Object SqlInstance, Name, CreateDate, AutoShrink, AutoClose | 
+Where-Object AutoShrink
 
 # Check out all the other dbatools commands - as we saw there were almost 700
 
