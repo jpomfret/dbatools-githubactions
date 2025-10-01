@@ -25,7 +25,7 @@ jobs:
         run: pwd
       
       - name: What files do we have?
-        run: ls
+        run: ls -recurse
 
       - uses: azure/sql-action@v2.3
         with:        

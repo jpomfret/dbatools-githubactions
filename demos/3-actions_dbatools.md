@@ -87,6 +87,8 @@
 
 ## On Commit deploy database code
 
+- what is sqlpackage?
+  - a command line utility that automates database development.
 - look at the [workflow](..\.github\workflows\deploydatabase.yml)
 - SQL Connection is to database 'OliviaBenson' on server 'kc-ts-01.database.windows.net'.
 - look at the folder `demos/database/`
