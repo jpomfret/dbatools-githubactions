@@ -35,7 +35,7 @@ describe "Check if replication is enabled on sql1" {
 describe "Check for testpub publication" {
     $publication = Get-DbaReplPublication -SqlInstance sql1
     It "There should be a publication named 'testpub'" {
-        $publication | Where-Object { $_.Name -eq 'testpub' } | Should -Not -BeNullOrEmpty
+        $publication | Where-Object { $_.Name -eq 'testpub' } | Should Not BeNullOrEmpty
     }
 }
 
