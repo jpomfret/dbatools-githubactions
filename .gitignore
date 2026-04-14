@@ -47,3 +47,9 @@ bld/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# powerpoint temp file
+~$Pomfret-dbatools-gha.pptx
+
+# terraform lock
+*.terraform.lock.hcl
