@@ -1,0 +1,188 @@
+name: Scheduled Destroy All Environments
+
+on:
+  schedule:
+    # Runs at 21:00 UTC daily
+    - cron: '0 21 * * *'
+  workflow_dispatch:
+    inputs:
+      confirm_destroy:
+        description: 'Type "destroy-all" to confirm destroying ALL environments'
+        required: true
+        type: string
+
+env:
+  TERRAFORM_VERSION: '1.9.0'
+  WORKING_DIR: './demos/databaseDevops/terraform'
+  TFVARS_DIR: '../data'
+
+jobs:
+  confirm-destroy-all:
+    name: 'Confirm Destroy All Environments'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check manual confirmation
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [ "${{ inputs.confirm_destroy }}" != "destroy-all" ]; then
+            echo "Error: You must type 'destroy-all' to confirm destruction of ALL environments"
+            exit 1
+          fi
+      
+      - name: Warning
+        run: |
+          echo "### ⚠️ WARNING: DESTROYING ALL ENVIRONMENTS ⚠️" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This workflow will destroy **ALL infrastructure** in:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Development** environment" >> $GITHUB_STEP_SUMMARY
+          echo "- **Test** environment" >> $GITHUB_STEP_SUMMARY
+          echo "- **Production** environment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Triggered by: **${{ github.event_name }}**" >> $GITHUB_STEP_SUMMARY
+
+  destroy-dev:
+    name: 'Destroy Dev Environment'
+    runs-on: ubuntu-latest
+    needs: confirm-destroy-all
+    environment: dev
+    
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Terraform Init
+        run: terraform init
+      
+      - name: Terraform Destroy Dev
+        env:
+          TF_VAR_sql_server_admin_password: ${{ secrets.SQL_ADMIN_PASSWORD }}
+        run: |
+          terraform destroy -auto-approve \
+            -var-file="${{ env.TFVARS_DIR }}/general.tfvars" \
+            -var-file="${{ env.TFVARS_DIR }}/dev.tfvars"
+      
+      - name: Dev Destroyed
+        if: success()
+        run: |
+          echo "### ✅ Dev Environment Destroyed" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Dev Destruction Failed
+        if: failure()
+        run: |
+          echo "### ❌ Dev Environment Destruction Failed" >> $GITHUB_STEP_SUMMARY
+
+  destroy-test:
+    name: 'Destroy Test Environment'
+    runs-on: ubuntu-latest
+    needs: destroy-dev
+    environment: test
+    
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Terraform Init
+        run: terraform init
+      
+      - name: Terraform Destroy Test
+        env:
+          TF_VAR_sql_server_admin_password: ${{ secrets.SQL_ADMIN_PASSWORD }}
+        run: |
+          terraform destroy -auto-approve \
+            -var-file="${{ env.TFVARS_DIR }}/general.tfvars" \
+            -var-file="${{ env.TFVARS_DIR }}/test.tfvars"
+      
+      - name: Test Destroyed
+        if: success()
+        run: |
+          echo "### ✅ Test Environment Destroyed" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Test Destruction Failed
+        if: failure()
+        run: |
+          echo "### ❌ Test Environment Destruction Failed" >> $GITHUB_STEP_SUMMARY
+
+  destroy-prod:
+    name: 'Destroy Prod Environment'
+    runs-on: ubuntu-latest
+    needs: destroy-test
+    environment: prod
+    
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Terraform Init
+        run: terraform init
+      
+      - name: Terraform Destroy Prod
+        env:
+          TF_VAR_sql_server_admin_password: ${{ secrets.SQL_ADMIN_PASSWORD }}
+        run: |
+          terraform destroy -auto-approve \
+            -var-file="${{ env.TFVARS_DIR }}/general.tfvars" \
+            -var-file="${{ env.TFVARS_DIR }}/prod.tfvars"
+      
+      - name: Prod Destroyed
+        if: success()
+        run: |
+          echo "### ✅ Prod Environment Destroyed" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Prod Destruction Failed
+        if: failure()
+        run: |
+          echo "### ❌ Prod Environment Destruction Failed" >> $GITHUB_STEP_SUMMARY
+
+  summary:
+    name: 'Destruction Summary'
+    runs-on: ubuntu-latest
+    needs: [destroy-dev, destroy-test, destroy-prod]
+    if: always()
+    steps:
+      - name: Final Summary
+        run: |
+          echo "## 🗑️ All Environments Destruction Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All COTW infrastructure has been destroyed at $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
