@@ -1,0 +1,101 @@
+name: Destroy COTW Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to destroy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - test
+          - prod
+      confirm_destroy:
+        description: 'Type "destroy" to confirm'
+        required: true
+        type: string
+
+env:
+  TERRAFORM_VERSION: '1.9.0'
+  WORKING_DIR: './demos/databaseDevops/terraform'
+  TFVARS_DIR: './demos/databaseDevops/data'
+
+jobs:
+  validate-destroy:
+    name: 'Validate Destroy Request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check confirmation
+        run: |
+          if [ "${{ inputs.confirm_destroy }}" != "destroy" ]; then
+            echo "Error: You must type 'destroy' to confirm destruction"
+            exit 1
+          fi
+      
+      - name: Warning
+        run: |
+          echo "### ⚠️ WARNING: INFRASTRUCTURE DESTRUCTION ⚠️" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "You are about to destroy all resources in the **${{ inputs.environment }}** environment!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This action is **IRREVERSIBLE** and will delete:" >> $GITHUB_STEP_SUMMARY
+          echo "- Resource Group" >> $GITHUB_STEP_SUMMARY
+          echo "- SQL Server and Database" >> $GITHUB_STEP_SUMMARY
+          echo "- Storage Account" >> $GITHUB_STEP_SUMMARY
+          echo "- All data contained within" >> $GITHUB_STEP_SUMMARY
+
+  terraform-destroy:
+    name: 'Terraform Destroy - ${{ inputs.environment }}'
+    runs-on: ubuntu-latest
+    needs: validate-destroy
+    environment: ${{ inputs.environment }}
+    
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Terraform Init
+        run: terraform init
+      
+      - name: Terraform Plan Destroy
+        env:
+          TF_VAR_sql_server_admin_password: ${{ secrets.SQL_ADMIN_PASSWORD }}
+        run: |
+          terraform plan -destroy \
+            -var-file="${{ env.TFVARS_DIR }}/general.tfvars" \
+            -var-file="${{ env.TFVARS_DIR }}/${{ inputs.environment }}.tfvars" \
+            -out=tfplan-destroy
+      
+      - name: Terraform Destroy
+        env:
+          TF_VAR_sql_server_admin_password: ${{ secrets.SQL_ADMIN_PASSWORD }}
+        run: terraform apply -auto-approve tfplan-destroy
+      
+      - name: Confirm Destruction
+        if: success()
+        run: |
+          echo "### ✅ Infrastructure Destroyed Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All resources in the **${{ inputs.environment }}** environment have been destroyed." >> $GITHUB_STEP_SUMMARY
+      
+      - name: Destruction Failed
+        if: failure()
+        run: |
+          echo "### ❌ Infrastructure Destruction Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The destruction of **${{ inputs.environment }}** environment failed. Please check the logs." >> $GITHUB_STEP_SUMMARY

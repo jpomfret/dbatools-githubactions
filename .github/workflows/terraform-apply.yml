@@ -1,0 +1,102 @@
+name: Deploy COTW Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - test
+          - prod
+      auto_approve:
+        description: 'Auto-approve Terraform apply'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  TERRAFORM_VERSION: '1.9.0'
+  WORKING_DIR: './demos/databaseDevops/terraform'
+  TFVARS_DIR: './demos/databaseDevops/data'
+
+jobs:
+  terraform-apply:
+    name: 'Terraform Apply - ${{ inputs.environment }}'
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Terraform Init
+        run: terraform init
+      
+      - name: Terraform Format Check
+        run: terraform fmt -check
+        continue-on-error: true
+      
+      - name: Terraform Validate
+        run: terraform validate
+      
+      - name: Terraform Plan
+        env:
+          TF_VAR_sql_server_admin_password: ${{ secrets.SQL_ADMIN_PASSWORD }}
+        run: |
+          terraform plan \
+            -var-file="${{ env.TFVARS_DIR }}/general.tfvars" \
+            -var-file="${{ env.TFVARS_DIR }}/${{ inputs.environment }}.tfvars" \
+            -out=tfplan
+      
+      - name: Terraform Apply
+        if: inputs.auto_approve == true
+        env:
+          TF_VAR_sql_server_admin_password: ${{ secrets.SQL_ADMIN_PASSWORD }}
+        run: terraform apply -auto-approve tfplan
+      
+      - name: Terraform Apply (Manual Approval)
+        if: inputs.auto_approve == false
+        env:
+          TF_VAR_sql_server_admin_password: ${{ secrets.SQL_ADMIN_PASSWORD }}
+        run: |
+          echo "Review the plan above. The workflow will proceed with apply."
+          terraform apply tfplan
+      
+      - name: Terraform Output
+        if: success()
+        run: terraform output -json > terraform-outputs.json
+      
+      - name: Upload Terraform Outputs
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-outputs-${{ inputs.environment }}
+          path: ${{ env.WORKING_DIR }}/terraform-outputs.json
+          retention-days: 30
+      
+      - name: Display deployed resources
+        if: success()
+        run: |
+          echo "### Deployment Summary for ${{ inputs.environment }} :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Resource Group:** $(terraform output -raw resource_group_name)" >> $GITHUB_STEP_SUMMARY
+          echo "**SQL Server:** $(terraform output -raw sql_server_name)" >> $GITHUB_STEP_SUMMARY
+          echo "**SQL Database:** $(terraform output -raw sql_database_name)" >> $GITHUB_STEP_SUMMARY
+          echo "**Storage Account:** $(terraform output -raw storage_account_name)" >> $GITHUB_STEP_SUMMARY
