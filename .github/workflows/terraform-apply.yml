@@ -20,7 +20,7 @@ on:
 env:
   TERRAFORM_VERSION: '1.9.0'
   WORKING_DIR: './demos/databaseDevops/terraform'
-  TFVARS_DIR: './demos/databaseDevops/data'
+  TFVARS_DIR: '../data'
 
 jobs:
   terraform-apply:
