@@ -22,7 +22,8 @@ locals {
   sql_database_name = "sqldb-${var.project_name}-${var.environment}"
 
   # Azure naming convention: st{project}{environment}{suffix} (no hyphens, max 24 chars)
-  storage_account_name = "st${var.project_full_name}${var.environment}${random_string.suffix.result}"
+  # Using project_name (cotw) instead of project_full_name to keep under 24 char limit
+  storage_account_name = "st${var.project_name}${var.environment}${random_string.suffix.result}"
 }
 
 # Resource Group

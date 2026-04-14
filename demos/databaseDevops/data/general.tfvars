@@ -2,7 +2,7 @@
 # Cats of the World (COTW) Project
 
 # Azure region
-location = "East US"
+location = "UK South"
 
 # Project naming
 project_name = "cotw"
