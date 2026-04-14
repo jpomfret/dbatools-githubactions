@@ -11,18 +11,19 @@ locals {
     var.common_tags,
     var.environment_tags
   )
-  
+
   # Azure naming convention: rg-{project}-{environment}-{region}
   resource_group_name = "rg-${var.project_name}-${var.environment}-${replace(lower(var.location), " ", "")}"
-  
+
   # Azure naming convention: sql-{project}-{environment}-{region}
   sql_server_name = "sql-${var.project_name}-${var.environment}-${random_string.suffix.result}"
-  
+
   # Azure naming convention: sqldb-{project}-{environment}
   sql_database_name = "sqldb-${var.project_name}-${var.environment}"
-  
+
   # Azure naming convention: st{project}{environment}{suffix} (no hyphens, max 24 chars)
-  storage_account_name = "st${var.project_full_name}${var.environment}${random_string.suffix.result}"
+  # Using project_name (cotw) instead of project_full_name to keep under 24 char limit
+  storage_account_name = "st${var.project_name}${var.environment}${random_string.suffix.result}"
 }
 
 # Resource Group
@@ -34,14 +35,14 @@ resource "azurerm_resource_group" "main" {
 
 # Storage Account
 resource "azurerm_storage_account" "main" {
-  name                     = local.storage_account_name
-  resource_group_name      = azurerm_resource_group.main.name
-  location                 = azurerm_resource_group.main.location
-  account_tier             = var.storage_account_tier
-  account_replication_type = var.storage_account_replication_type
-  account_kind             = var.storage_account_kind
+  name                       = local.storage_account_name
+  resource_group_name        = azurerm_resource_group.main.name
+  location                   = azurerm_resource_group.main.location
+  account_tier               = var.storage_account_tier
+  account_replication_type   = var.storage_account_replication_type
+  account_kind               = var.storage_account_kind
   https_traffic_only_enabled = var.storage_account_enable_https_traffic_only
-  
+
   tags = local.all_tags
 }
 
@@ -54,7 +55,7 @@ resource "azurerm_mssql_server" "main" {
   administrator_login          = var.sql_server_admin_login
   administrator_login_password = var.sql_server_admin_password
   minimum_tls_version          = "1.2"
-  
+
   tags = local.all_tags
 }
 
@@ -65,10 +66,10 @@ resource "azurerm_mssql_database" "main" {
   sku_name       = var.sql_database_sku_name
   max_size_gb    = var.sql_database_max_size_gb
   zone_redundant = false
-  
+
   auto_pause_delay_in_minutes = var.sql_auto_pause_delay_in_minutes
   min_capacity                = var.sql_min_capacity
-  
+
   tags = local.all_tags
 }
 
