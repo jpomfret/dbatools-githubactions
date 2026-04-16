@@ -93,19 +93,16 @@ jobs:
           
           Write-Host "SQL Server: $sqlServer"
           Write-Host "SQL Database: $sqlDatabase"
-      
-      - name: Build database project
-        run: |
-          dotnet build ${{ env.DATABASE_PROJECT }} -c Debug
-      
       - name: Deploy database with SqlPackage
         uses: azure/sql-action@v2.3
         with:
           connection-string: 'Server=${{ env.SQL_SERVER }}.database.windows.net;Database=${{ env.SQL_DATABASE }};User Id=sqladmin;Password=${{ secrets.SQL_ADMIN_PASSWORD }};Encrypt=true;'
           path: ${{ env.DACPAC_PATH }}
           action: 'publish'
+          build-arguments: '-c Release'                 # Optional build options passed to dotnet build
           arguments: '/p:DropObjectsNotInSource=false /p:BlockOnPossibleDataLoss=true'
-      
+          sqlpackage-path: 'C:\Program Files\Microsoft SQL Server\170\DAC\bin\sqlpackage.exe'
+
       - name: Install dbatools
         shell: pwsh
         run: |
