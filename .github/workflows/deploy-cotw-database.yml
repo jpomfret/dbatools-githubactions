@@ -21,7 +21,6 @@ on:
 
 env:
   DATABASE_PROJECT: './demos/database/CatsOfTheWorld/CatsOfTheWorld.sqlproj'
-  DACPAC_PATH: './demos/database/CatsOfTheWorld/bin/Debug/CatsOfTheWorld.dacpac'
 
 jobs:
   prepare-matrix:
@@ -93,11 +92,12 @@ jobs:
           
           Write-Host "SQL Server: $sqlServer"
           Write-Host "SQL Database: $sqlDatabase"
+
       - name: Deploy database with SqlPackage
         uses: azure/sql-action@v2.3
         with:
           connection-string: 'Server=${{ env.SQL_SERVER }}.database.windows.net;Database=${{ env.SQL_DATABASE }};User Id=sqladmin;Password=${{ secrets.SQL_ADMIN_PASSWORD }};Encrypt=true;'
-          path: ${{ env.DACPAC_PATH }}
+          path: ${{ env.DATABASE_PROJECT }}
           action: 'publish'
           build-arguments: '-c Release'                 # Optional build options passed to dotnet build
           arguments: '/p:DropObjectsNotInSource=false /p:BlockOnPossibleDataLoss=true'
