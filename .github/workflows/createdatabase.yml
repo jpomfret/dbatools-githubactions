@@ -50,7 +50,7 @@ jobs:
         Write-Host ('Recovery Model: {0}' -f $RecoveryModel)
 
         echo "ENVIRONMENT=$Environment" >> $env:GITHUB_ENV
-        echo "SQL_DATABASE=$Database" >> $env:GITHUB_ENV
+        echo "DATABASE=$Database" >> $env:GITHUB_ENV
         echo "RECOVERY_MODEL=$RecoveryModel" >> $env:GITHUB_ENV
     
     - name: Install and cache PowerShell modules
