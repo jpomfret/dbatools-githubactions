@@ -14,9 +14,9 @@ body:
       description: The SQL Server instance to add the database to.
       multiple: false
       options:
-        - sql1
-        - sql2
-        - sql3
+        - dev
+        - test
+        - prod
     validations:
       required: true
   - type: input
