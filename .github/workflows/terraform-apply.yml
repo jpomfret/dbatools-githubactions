@@ -3,16 +3,18 @@ name: Deploy COTW Infrastructure
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: 'Environment to deploy'
-        required: true
-        type: choice
-        options:
-          - dev
-          - test
-          - prod
-      auto_approve:
-        description: 'Auto-approve Terraform apply'
+      deploy_dev:
+        description: 'Deploy to Dev'
+        required: false
+        type: boolean
+        default: false
+      deploy_test:
+        description: 'Deploy to Test'
+        required: false
+        type: boolean
+        default: false
+      deploy_prod:
+        description: 'Deploy to Prod'
         required: false
         type: boolean
         default: false
@@ -23,10 +25,45 @@ env:
   TFVARS_DIR: '../data'
 
 jobs:
-  terraform-apply:
-    name: 'Terraform Apply - ${{ inputs.environment }}'
+  prepare-matrix:
+    name: 'Prepare Deployment Matrix'
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set matrix based on inputs
+        id: set-matrix
+        run: |
+          environments=()
+          if [ "${{ inputs.deploy_dev }}" == "true" ]; then
+            environments+=("dev")
+          fi
+          if [ "${{ inputs.deploy_test }}" == "true" ]; then
+            environments+=("test")
+          fi
+          if [ "${{ inputs.deploy_prod }}" == "true" ]; then
+            environments+=("prod")
+          fi
+          
+          if [ ${#environments[@]} -eq 0 ]; then
+            echo "Error: No environments selected for deployment"
+            exit 1
+          fi
+          
+          # Convert to JSON array
+          matrix=$(printf '%s\n' "${environments[@]}" | jq -R . | jq -s -c '{environment: .}')
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+          echo "Deploying to: ${environments[*]}"
+
+  terraform-apply:
+    name: 'Terraform Apply - ${{ matrix.environment }}'
+    runs-on: ubuntu-latest
+    needs: prepare-matrix
+    strategy:
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+      max-parallel: 1
+      fail-fast: false
+    environment: ${{ matrix.environment }}
     
     env:
       ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
@@ -67,22 +104,13 @@ jobs:
         run: |
           terraform plan \
             -var-file="${{ env.TFVARS_DIR }}/general.tfvars" \
-            -var-file="${{ env.TFVARS_DIR }}/${{ inputs.environment }}.tfvars" \
+            -var-file="${{ env.TFVARS_DIR }}/${{ matrix.environment }}.tfvars" \
             -out=tfplan
       
       - name: Terraform Apply
-        if: inputs.auto_approve == true
         env:
           TF_VAR_sql_server_admin_password: ${{ secrets.SQL_ADMIN_PASSWORD }}
         run: terraform apply -auto-approve tfplan
-      
-      - name: Terraform Apply (Manual Approval)
-        if: inputs.auto_approve == false
-        env:
-          TF_VAR_sql_server_admin_password: ${{ secrets.SQL_ADMIN_PASSWORD }}
-        run: |
-          echo "Review the plan above. The workflow will proceed with apply."
-          terraform apply tfplan
       
       - name: Terraform Output
         if: success()
@@ -92,14 +120,14 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: terraform-outputs-${{ inputs.environment }}
+          name: terraform-outputs-${{ matrix.environment }}
           path: ${{ env.WORKING_DIR }}/terraform-outputs.json
           retention-days: 30
       
       - name: Display deployed resources
         if: success()
         run: |
-          echo "### Deployment Summary for ${{ inputs.environment }} :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployment Summary for ${{ matrix.environment }} :rocket:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Resource Group:** $(terraform output -raw resource_group_name)" >> $GITHUB_STEP_SUMMARY
           echo "**SQL Server:** $(terraform output -raw sql_server_name)" >> $GITHUB_STEP_SUMMARY
