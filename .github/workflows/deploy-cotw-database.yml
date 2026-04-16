@@ -54,26 +54,15 @@ jobs:
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
           echo "Deploying database to: ${environments[*]}"
 
-  get-infrastructure-info:
-    name: 'Get SQL Server Info - ${{ matrix.environment }}'
-    runs-on: ubuntu-latest
+  deploy-database:
+    name: 'Deploy Database - ${{ matrix.environment }}'
+    runs-on: windows-latest
     needs: prepare-matrix
     strategy:
       matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
       max-parallel: 1
       fail-fast: false
-    
-    outputs:
-      sql-server-dev: ${{ steps.terraform-output-dev.outputs.sql_server }}
-      sql-database-dev: ${{ steps.terraform-output-dev.outputs.sql_database }}
-      sql-server-test: ${{ steps.terraform-output-test.outputs.sql_server }}
-      sql-database-test: ${{ steps.terraform-output-test.outputs.sql_database }}
-      sql-server-prod: ${{ steps.terraform-output-prod.outputs.sql_server }}
-      sql-database-prod: ${{ steps.terraform-output-prod.outputs.sql_database }}
-    
-    defaults:
-      run:
-        working-directory: ./demos/databaseDevops/terraform
+    environment: ${{ matrix.environment }}
     
     steps:
       - name: Checkout code
@@ -85,72 +74,29 @@ jobs:
           terraform_version: '1.9.0'
           terraform_wrapper: false
       
-      - name: Terraform Init
+      - name: Get SQL Server info from Terraform
+        shell: pwsh
         env:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-        run: terraform init -backend-config="key=cotw-${{ matrix.environment }}.terraform.tfstate"
-      
-      - name: Get Terraform Outputs - Dev
-        if: matrix.environment == 'dev'
-        id: terraform-output-dev
         run: |
-          echo "sql_server=$(terraform output -raw sql_server_name)" >> $GITHUB_OUTPUT
-          echo "sql_database=$(terraform output -raw sql_database_name)" >> $GITHUB_OUTPUT
-      
-      - name: Get Terraform Outputs - Test
-        if: matrix.environment == 'test'
-        id: terraform-output-test
-        run: |
-          echo "sql_server=$(terraform output -raw sql_server_name)" >> $GITHUB_OUTPUT
-          echo "sql_database=$(terraform output -raw sql_database_name)" >> $GITHUB_OUTPUT
-      
-      - name: Get Terraform Outputs - Prod
-        if: matrix.environment == 'prod'
-        id: terraform-output-prod
-        run: |
-          echo "sql_server=$(terraform output -raw sql_server_name)" >> $GITHUB_OUTPUT
-          echo "sql_database=$(terraform output -raw sql_database_name)" >> $GITHUB_OUTPUT
-
-  deploy-database:
-    name: 'Deploy Database - ${{ matrix.environment }}'
-    runs-on: windows-latest
-    needs: [prepare-matrix, get-infrastructure-info]
-    strategy:
-      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
-      max-parallel: 1
-      fail-fast: false
-    environment: ${{ matrix.environment }}
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+          cd demos/databaseDevops/terraform
+          terraform init -backend-config="key=cotw-${{ matrix.environment }}.terraform.tfstate"
+          
+          $sqlServer = terraform output -raw sql_server_name
+          $sqlDatabase = terraform output -raw sql_database_name
+          
+          echo "SQL_SERVER=$sqlServer" >> $env:GITHUB_ENV
+          echo "SQL_DATABASE=$sqlDatabase" >> $env:GITHUB_ENV
+          
+          Write-Host "SQL Server: $sqlServer"
+          Write-Host "SQL Database: $sqlDatabase"
       
       - name: Build database project
         run: |
           dotnet build ${{ env.DATABASE_PROJECT }} -c Debug
-      
-      - name: Set environment variables
-        shell: pwsh
-        run: |
-          $env = "${{ matrix.environment }}"
-          
-          switch ($env) {
-              "dev" {
-                  echo "SQL_SERVER=${{ needs.get-infrastructure-info.outputs.sql-server-dev }}" >> $env:GITHUB_ENV
-                  echo "SQL_DATABASE=${{ needs.get-infrastructure-info.outputs.sql-database-dev }}" >> $env:GITHUB_ENV
-              }
-              "test" {
-                  echo "SQL_SERVER=${{ needs.get-infrastructure-info.outputs.sql-server-test }}" >> $env:GITHUB_ENV
-                  echo "SQL_DATABASE=${{ needs.get-infrastructure-info.outputs.sql-database-test }}" >> $env:GITHUB_ENV
-              }
-              "prod" {
-                  echo "SQL_SERVER=${{ needs.get-infrastructure-info.outputs.sql-server-prod }}" >> $env:GITHUB_ENV
-                  echo "SQL_DATABASE=${{ needs.get-infrastructure-info.outputs.sql-database-prod }}" >> $env:GITHUB_ENV
-              }
-          }
       
       - name: Deploy database with SqlPackage
         uses: azure/sql-action@v2.3
