@@ -9,7 +9,7 @@ env:
 
 jobs:
   add_database:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     if: contains(github.event.issue.labels.*.name, 'database')
     permissions:
       issues: write      # Add this to ensure proper permissions
