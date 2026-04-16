@@ -16,6 +16,15 @@ jobs:
       contents: read     # Add this if you need repo access
 
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: '1.9.0'
+        terraform_wrapper: false
+
     - name: Issue Forms Body Parser
       id: parse
       uses: zentered/issue-forms-body-parser@v2.0.0
