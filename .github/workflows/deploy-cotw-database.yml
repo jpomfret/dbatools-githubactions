@@ -1,0 +1,268 @@
+name: Deploy CatsOfTheWorld Database
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_dev:
+        description: 'Deploy to Dev'
+        required: false
+        type: boolean
+        default: false
+      deploy_test:
+        description: 'Deploy to Test'
+        required: false
+        type: boolean
+        default: false
+      deploy_prod:
+        description: 'Deploy to Prod'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  DATABASE_PROJECT: './demos/database/CatsOfTheWorld/CatsOfTheWorld.sqlproj'
+  DACPAC_PATH: './demos/database/CatsOfTheWorld/bin/Debug/CatsOfTheWorld.dacpac'
+
+jobs:
+  prepare-matrix:
+    name: 'Prepare Deployment Matrix'
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set matrix based on inputs
+        id: set-matrix
+        run: |
+          environments=()
+          if [ "${{ inputs.deploy_dev }}" == "true" ]; then
+            environments+=("dev")
+          fi
+          if [ "${{ inputs.deploy_test }}" == "true" ]; then
+            environments+=("test")
+          fi
+          if [ "${{ inputs.deploy_prod }}" == "true" ]; then
+            environments+=("prod")
+          fi
+          
+          if [ ${#environments[@]} -eq 0 ]; then
+            echo "Error: No environments selected for deployment"
+            exit 1
+          fi
+          
+          # Convert to JSON array
+          matrix=$(printf '%s\n' "${environments[@]}" | jq -R . | jq -s -c '{environment: .}')
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+          echo "Deploying database to: ${environments[*]}"
+
+  get-infrastructure-info:
+    name: 'Get SQL Server Info - ${{ matrix.environment }}'
+    runs-on: ubuntu-latest
+    needs: prepare-matrix
+    strategy:
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+      max-parallel: 1
+      fail-fast: false
+    
+    outputs:
+      sql-server-dev: ${{ steps.terraform-output-dev.outputs.sql_server }}
+      sql-database-dev: ${{ steps.terraform-output-dev.outputs.sql_database }}
+      sql-server-test: ${{ steps.terraform-output-test.outputs.sql_server }}
+      sql-database-test: ${{ steps.terraform-output-test.outputs.sql_database }}
+      sql-server-prod: ${{ steps.terraform-output-prod.outputs.sql_server }}
+      sql-database-prod: ${{ steps.terraform-output-prod.outputs.sql_database }}
+    
+    defaults:
+      run:
+        working-directory: ./demos/databaseDevops/terraform
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.9.0'
+          terraform_wrapper: false
+      
+      - name: Terraform Init
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+        run: terraform init -backend-config="key=cotw-${{ matrix.environment }}.terraform.tfstate"
+      
+      - name: Get Terraform Outputs - Dev
+        if: matrix.environment == 'dev'
+        id: terraform-output-dev
+        run: |
+          echo "sql_server=$(terraform output -raw sql_server_name)" >> $GITHUB_OUTPUT
+          echo "sql_database=$(terraform output -raw sql_database_name)" >> $GITHUB_OUTPUT
+      
+      - name: Get Terraform Outputs - Test
+        if: matrix.environment == 'test'
+        id: terraform-output-test
+        run: |
+          echo "sql_server=$(terraform output -raw sql_server_name)" >> $GITHUB_OUTPUT
+          echo "sql_database=$(terraform output -raw sql_database_name)" >> $GITHUB_OUTPUT
+      
+      - name: Get Terraform Outputs - Prod
+        if: matrix.environment == 'prod'
+        id: terraform-output-prod
+        run: |
+          echo "sql_server=$(terraform output -raw sql_server_name)" >> $GITHUB_OUTPUT
+          echo "sql_database=$(terraform output -raw sql_database_name)" >> $GITHUB_OUTPUT
+
+  deploy-database:
+    name: 'Deploy Database - ${{ matrix.environment }}'
+    runs-on: windows-latest
+    needs: [prepare-matrix, get-infrastructure-info]
+    strategy:
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+      max-parallel: 1
+      fail-fast: false
+    environment: ${{ matrix.environment }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Build database project
+        run: |
+          dotnet build ${{ env.DATABASE_PROJECT }} -c Debug
+      
+      - name: Set environment variables
+        shell: pwsh
+        run: |
+          $env = "${{ matrix.environment }}"
+          
+          switch ($env) {
+              "dev" {
+                  echo "SQL_SERVER=${{ needs.get-infrastructure-info.outputs.sql-server-dev }}" >> $env:GITHUB_ENV
+                  echo "SQL_DATABASE=${{ needs.get-infrastructure-info.outputs.sql-database-dev }}" >> $env:GITHUB_ENV
+              }
+              "test" {
+                  echo "SQL_SERVER=${{ needs.get-infrastructure-info.outputs.sql-server-test }}" >> $env:GITHUB_ENV
+                  echo "SQL_DATABASE=${{ needs.get-infrastructure-info.outputs.sql-database-test }}" >> $env:GITHUB_ENV
+              }
+              "prod" {
+                  echo "SQL_SERVER=${{ needs.get-infrastructure-info.outputs.sql-server-prod }}" >> $env:GITHUB_ENV
+                  echo "SQL_DATABASE=${{ needs.get-infrastructure-info.outputs.sql-database-prod }}" >> $env:GITHUB_ENV
+              }
+          }
+      
+      - name: Deploy database with SqlPackage
+        uses: azure/sql-action@v2.3
+        with:
+          connection-string: 'Server=${{ env.SQL_SERVER }}.database.windows.net;Database=${{ env.SQL_DATABASE }};User Id=sqladmin;Password=${{ secrets.SQL_ADMIN_PASSWORD }};Encrypt=true;'
+          path: ${{ env.DACPAC_PATH }}
+          action: 'publish'
+          arguments: '/p:DropObjectsNotInSource=false /p:BlockOnPossibleDataLoss=true'
+      
+      - name: Install dbatools
+        shell: pwsh
+        run: |
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-Module dbatools -Force -Scope CurrentUser -SkipPublisherCheck
+          Import-Module dbatools
+      
+      - name: Generate database summary with dbatools
+        shell: pwsh
+        run: |
+          # Create credential
+          $securePassword = ConvertTo-SecureString "${{ secrets.SQL_ADMIN_PASSWORD }}" -AsPlainText -Force
+          $credential = New-Object System.Management.Automation.PSCredential ("sqladmin", $securePassword)
+          
+          # Connection parameters
+          $splat = @{
+              SqlInstance   = "${{ env.SQL_SERVER }}.database.windows.net"
+              SqlCredential = $credential
+              Database      = "${{ env.SQL_DATABASE }}"
+              EnableException = $true
+          }
+          
+          Write-Host "Connected to: ${{ env.SQL_SERVER }}.database.windows.net"
+          
+          # Start building summary
+          "## Database Deployment Summary - ${{ matrix.environment }} :cat:" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          
+          # Get database information
+          try {
+              $dbInfo = Get-DbaDatabase @splat
+              "**Database:** $($dbInfo.Name)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+              "**Status:** $($dbInfo.Status)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+              "**Compatibility Level:** $($dbInfo.CompatibilityLevel)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+              "**Size:** $([math]::Round($dbInfo.Size, 2)) MB" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+              "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          }
+          catch {
+              Write-Warning "Could not retrieve database info: $_"
+          }
+          
+          # Get tables
+          try {
+              $tables = Get-DbaDbTable @splat
+              "### Tables ($($tables.Count))" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+              "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+              
+              foreach ($table in $tables | Sort-Object Schema, Name) {
+                  $columns = ($table | Get-DbaDbTableColumn).Count
+                  "- **$($table.Schema).$($table.Name)** - $columns columns, $($table.RowCount) rows" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+              }
+              "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          }
+          catch {
+              Write-Warning "Could not retrieve table info: $_"
+          }
+          
+          # Get stored procedures
+          try {
+              $procs = Get-DbaDbStoredProcedure @splat | Where-Object { -not $_.IsSystemObject }
+              
+              if ($procs.Count -gt 0) {
+                  "### Stored Procedures ($($procs.Count))" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+                  "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+                  
+                  foreach ($proc in $procs | Sort-Object Schema, Name) {
+                      "- **$($proc.Schema).$($proc.Name)**" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+                  }
+                  "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+              }
+          }
+          catch {
+              Write-Warning "Could not retrieve stored procedure info: $_"
+          }
+          
+          # Connection info
+          "### Connection Information" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "**Server:** ${{ env.SQL_SERVER }}.database.windows.net" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "**Database:** ${{ env.SQL_DATABASE }}" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "**Admin User:** sqladmin" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          
+          # Sample dbatools connection command
+          '### Connect with dbatools' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          '```powershell' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          '$credential = Get-Credential -UserName "sqladmin"' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          '$splat = @{' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "    SqlInstance   = `"${{ env.SQL_SERVER }}.database.windows.net`"" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          '    SqlCredential = $credential' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "    Database      = `"${{ env.SQL_DATABASE }}`"" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          '}' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          'Get-DbaDatabase @splat' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          '```' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          
+          Write-Host "Database summary generated successfully!"
+      
+      - name: Verify deployment
+        shell: pwsh
+        run: |
+          Write-Host "✅ Database deployment completed for ${{ matrix.environment }} environment"
+          Write-Host "Server: ${{ env.SQL_SERVER }}.database.windows.net"
+          Write-Host "Database: ${{ env.SQL_DATABASE }}"

@@ -6,6 +6,10 @@ This demo showcases Infrastructure as Code (IaC) for database deployments using 
 
 This infrastructure deploys Azure SQL Database environments for the Cats of the World (COTW) project across three environments: dev, test, and prod.
 
+**Two-Part Deployment:**
+1. **Infrastructure** (this guide) - Deploys Azure resources using Terraform
+2. **Database** ([Database Deployment Guide](DATABASE-DEPLOYMENT.md)) - Deploys database schema using SqlPackage and dbatools
+
 ## Architecture
 
 Each environment includes:
@@ -94,6 +98,36 @@ az ad sp create-for-rbac --name "github-actions-cotw" `
 
 Copy the JSON output and save it as the `AZURE_CREDENTIALS` secret in GitHub.
 
+### Setting up Terraform State Storage (One-Time Setup)
+
+**CRITICAL**: Before running any workflows, you must set up Azure Storage for Terraform state:
+
+```bash
+# Navigate to bootstrap directory
+cd demos/databaseDevops/terraform/backend-bootstrap
+
+# Login to Azure
+az login
+
+# Initialize and apply the bootstrap configuration
+terraform init
+terraform apply
+
+# Confirm the resources are created
+```
+
+This creates:
+- **Resource Group**: `rg-terraform-state` 
+- **Storage Account**: `stcotwterraformstate` (with versioning enabled)
+- **Container**: `tfstate`
+
+**Important Notes:**
+- This is a **one-time setup** that must be done before running GitHub Actions workflows
+- The storage account stores state for ALL environments (dev/test/prod)
+- State files are versioned for safety
+- Do NOT destroy these resources unless completely done with the project
+- The backend is already configured in `providers.tf` to use these values
+
 ## Configuration Files
 
 ### Terraform Variables (`data/` folder)
@@ -120,7 +154,7 @@ The workflow will:
 - Apply the infrastructure
 - Output resource details
 
-### Destroy Infrastructure
+### Destroy Infrastructure (Single Environment)
 
 1. Go to **Actions** tab in GitHub
 2. Select **Destroy COTW Infrastructure** workflow
@@ -130,6 +164,26 @@ The workflow will:
 6. Click **Run workflow**
 
 ⚠️ **WARNING**: This permanently deletes all resources and data in the selected environment!
+
+### Destroy All Environments (Scheduled)
+
+A scheduled workflow runs **daily at 21:00 UTC** to destroy all environments and save costs overnight.
+
+**Manual Trigger:**
+1. Go to **Actions** tab in GitHub
+2. Select **Scheduled Destroy All Environments** workflow
+3. Click **Run workflow**
+4. Type "destroy-all" to confirm
+5. Click **Run workflow**
+
+The workflow will destroy environments in sequence:
+1. Development
+2. Test
+3. Production
+
+⚠️ **CRITICAL**: This destroys **ALL** infrastructure across all three environments! Use with extreme caution.
+
+**Schedule**: Automatically runs at 21:00 UTC every day to minimize costs during off-hours.
 
 ## Environment Specifications
 
@@ -159,20 +213,47 @@ This setup uses Azure SQL Database Serverless tier to minimize costs:
 - **Serverless pricing**: Pay only for compute used
 - **LRS Storage**: Locally redundant storage for cost savings
 
-## Terraform State
+## Terraform State Management
 
-⚠️ **Important**: This configuration uses local state. For production use, configure remote state in Azure Storage:
+This project uses **Azure Storage Backend** for Terraform state, which provides:
+
+✅ **Persistent State**: State is preserved across GitHub Actions workflow runs  
+✅ **State Locking**: Prevents concurrent modifications  
+✅ **Versioning**: State file history with blob versioning  
+✅ **Team Collaboration**: Shared state accessible to all team members
+
+### State Configuration
+
+The backend is configured in [providers.tf](demos/databaseDevops/terraform/providers.tf):
 
 ```hcl
-terraform {
-  backend "azurerm" {
-    resource_group_name  = "rg-terraform-state"
-    storage_account_name = "stterraformstate"
-    container_name       = "tfstate"
-    key                  = "cotw.terraform.tfstate"
-  }
+backend "azurerm" {
+  resource_group_name  = "rg-terraform-state"
+  storage_account_name = "stcotwterraformstate"
+  container_name       = "tfstate"
+  key                  = "cotw.terraform.tfstate"
 }
 ```
+
+### State Files
+
+All three environments (dev/test/prod) share the same state file: `cotw.terraform.tfstate`
+
+Terraform uses **workspaces** or **resource targeting** to manage different environments within the same state file. Each environment's resources are tracked by their unique names (e.g., `rg-cotw-dev-uksouth` vs `rg-cotw-prod-uksouth`).
+
+### Viewing State
+
+To view the current state:
+
+```bash
+cd demos/databaseDevops/terraform
+terraform init
+terraform state list
+```
+
+### State Locking
+
+Azure Storage automatically provides state locking via blob leases, preventing concurrent modifications that could corrupt state.
 
 ## Manual Terraform Commands
 
@@ -198,8 +279,9 @@ terraform apply \
 # Destroy
 terraform destroy \
   -var-file="../data/general.tfvars" \
-  -var-file="../data/dev.tfvars" \
-  -var="sql_server_admin_password=YourSecurePassword123!"
+  State is managed in Azure Storage with automatic locking
+- If a workflow fails, the state lock may need manual release
+- Check Azure Storage blob leases if you see "state locked" errors"
 ```
 
 ## Connecting to SQL Database
@@ -230,8 +312,15 @@ Connect-DbaInstance -SqlInstance $serverName -Database $databaseName -SqlCredent
 
 ## Next Steps
 
-1. Configure remote state backend
-2. Add database deployment via SQLPackage/dacpac
+1. ✅ Configure remote state backend (Completed - using Azure Storage)
+2. ✅ Add database deployment via SQLPackage/dacpac - **[See Database Deployment Guide](DATABASE-DEPLOYMENT.md)**
 3. Implement database migrations
 4. Add monitoring and alerting
 5. Configure backup retention policies
+6. Set up automated testing for database changes
+
+## Related Documentation
+
+- **[Database Deployment Guide](DATABASE-DEPLOYMENT.md)** - Deploy CatsOfTheWorld database using SqlPackage and dbatools
+- **[Deploy Database Workflow](../../.github/workflows/deploy-cotw-database.yml)** - Automated database deployment pipeline
+- **[Infrastructure Workflow](../../.github/workflows/terraform-apply.yml)** - Infrastructure deployment pipeline
