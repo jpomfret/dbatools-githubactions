@@ -49,7 +49,7 @@ jobs:
         Write-Host ('Database: {0}' -f $Database)
         Write-Host ('Recovery Model: {0}' -f $RecoveryModel)
 
-        echo "SQL_SERVER=$Environment" >> $env:GITHUB_ENV
+        echo "ENVIRONMENT=$Environment" >> $env:GITHUB_ENV
         echo "SQL_DATABASE=$Database" >> $env:GITHUB_ENV
         echo "RECOVERY_MODEL=$RecoveryModel" >> $env:GITHUB_ENV
     
@@ -72,7 +72,7 @@ jobs:
         ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
       run: |
         cd demos/databaseDevops/terraform
-        terraform init -backend-config="key=cotw-${{ env.Environment }}.terraform.tfstate"
+        terraform init -backend-config="key=cotw-${{ env.ENVIRONMENT }}.terraform.tfstate"
         
         $sqlServer = terraform output -raw sql_server_name
         
@@ -83,9 +83,9 @@ jobs:
     - name: Add the database
       shell: pwsh
       run: |
-        Write-Host ('Environment: {0}' -f ${{ env.Environment }})
-        Write-Host ('Database: {0}' -f ${{ env.Database }})
-        Write-Host ('Recovery Model: {0}' -f ${{ env.RecoveryModel }})
+        Write-Host ('Environment: {0}' -f ${{ env.ENVIRONMENT }})
+        Write-Host ('Database: {0}' -f ${{ env.DATABASE }})
+        Write-Host ('Recovery Model: {0}' -f ${{ env.RECOVERY_MODEL }})
         try {
           # Create credential
           $securePassword = ConvertTo-SecureString "${{ secrets.SQL_ADMIN_PASSWORD }}" -AsPlainText -Force
@@ -95,7 +95,7 @@ jobs:
           $db = @{
               SqlInstance   = "${{ env.SQL_SERVER }}.database.windows.net"
               SqlCredential = $credential
-              Database      = ${{ env.Database }}
+              Database      = ${{ env.DATABASE }}
               EnableException = $true
           }
           New-DbaDatabase @db
@@ -106,7 +106,7 @@ jobs:
     - name: Deploy database with SqlPackage
       uses: azure/sql-action@v2.3
       with:
-        connection-string: 'Server=${{ env.SQL_SERVER }}.database.windows.net;Database=${{ env.Database }};User Id=sqladmin;Password=${{ secrets.SQL_ADMIN_PASSWORD }};Encrypt=true;'
+        connection-string: 'Server=${{ env.SQL_SERVER }}.database.windows.net;Database=${{ env.DATABASE }};User Id=sqladmin;Password=${{ secrets.SQL_ADMIN_PASSWORD }};Encrypt=true;'
         path: ${{ env.DATABASE_PROJECT }}
         action: 'publish'
         build-arguments: '-c Release'                 # Optional build options passed to dotnet build
