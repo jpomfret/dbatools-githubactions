@@ -95,10 +95,9 @@ jobs:
           $db = @{
               SqlInstance   = "${{ env.SQL_SERVER }}.database.windows.net"
               SqlCredential = $credential
-              Database      = '${{ env.DATABASE }}'
               EnableException = $true
           }
-          New-DbaDatabase @db
+          Invoke-DbaQuery @db -Query 'CREATE DATABASE ${{ env.DATABASE }}'
         } catch {
           Throw $_
         }
