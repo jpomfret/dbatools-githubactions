@@ -76,7 +76,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
       
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -backend-config="key=cotw-${{ inputs.environment }}.terraform.tfstate"
       
       - name: Terraform Plan Destroy
         env:

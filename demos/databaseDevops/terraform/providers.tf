@@ -16,7 +16,7 @@ terraform {
     resource_group_name  = "rg-terraform-state"
     storage_account_name = "stcotwterraformstate"
     container_name       = "tfstate"
-    key                  = "cotw.terraform.tfstate"
+    # key will be set via -backend-config during terraform init
   }
 }
 

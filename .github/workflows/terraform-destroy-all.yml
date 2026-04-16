@@ -71,7 +71,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
       
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -backend-config="key=cotw-dev.terraform.tfstate"
       
       - name: Terraform Destroy Dev
         env:
@@ -122,7 +122,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
       
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -backend-config="key=cotw-test.terraform.tfstate"
       
       - name: Terraform Destroy Test
         env:
@@ -173,7 +173,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
       
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -backend-config="key=cotw-prod.terraform.tfstate"
       
       - name: Terraform Destroy Prod
         env:
