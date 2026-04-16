@@ -8,10 +8,10 @@ body:
       value: |
         Let's add a database to a SQL Server.
   - type: dropdown
-    id: sqlserver
+    id: environment
     attributes:
-      label: SQL Server
-      description: The SQL Server instance to add the database to.
+      label: Environment
+      description: The SQL Server instance\environment to add the database to.
       multiple: false
       options:
         - dev
