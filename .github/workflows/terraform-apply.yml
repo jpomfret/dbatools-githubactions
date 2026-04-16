@@ -99,20 +99,13 @@ jobs:
         run: terraform validate
       
       - name: Terraform Plan
-        id: plan
         env:
           TF_VAR_sql_server_admin_password: ${{ secrets.SQL_ADMIN_PASSWORD }}
         run: |
           terraform plan \
             -var-file="${{ env.TFVARS_DIR }}/general.tfvars" \
             -var-file="${{ env.TFVARS_DIR }}/${{ matrix.environment }}.tfvars" \
-            -out=tfplan \
-            -no-color | tee plan_output.txt
-          
-          # Extract the plan summary (last few lines typically contain the summary)
-          echo "PLAN_SUMMARY<<EOF" >> $GITHUB_OUTPUT
-          cat plan_output.txt >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+            -out=tfplan
       
       - name: Terraform Apply
         env:
@@ -135,11 +128,6 @@ jobs:
         if: success()
         run: |
           echo "### Deployment Summary for ${{ matrix.environment }} :rocket:" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "#### Terraform Plan" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          cat plan_output.txt >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "#### Deployed Resources" >> $GITHUB_STEP_SUMMARY
           echo "**Resource Group:** $(terraform output -raw resource_group_name)" >> $GITHUB_STEP_SUMMARY
