@@ -44,7 +44,7 @@ jobs:
     name: 'Destroy Dev Environment'
     runs-on: ubuntu-latest
     needs: confirm-destroy-all
-    environment: dev
+    environment: ${{ github.event_name == 'workflow_dispatch' && 'dev' || null }}
     
     env:
       ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
@@ -95,7 +95,7 @@ jobs:
     name: 'Destroy Test Environment'
     runs-on: ubuntu-latest
     needs: destroy-dev
-    environment: test
+    environment: ${{ github.event_name == 'workflow_dispatch' && 'test' || null }}
     
     env:
       ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
@@ -146,7 +146,7 @@ jobs:
     name: 'Destroy Prod Environment'
     runs-on: ubuntu-latest
     needs: destroy-test
-    environment: prod
+    environment: ${{ github.event_name == 'workflow_dispatch' && 'prod' || null }}
     
     env:
       ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
