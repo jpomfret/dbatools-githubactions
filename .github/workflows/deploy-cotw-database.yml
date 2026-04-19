@@ -163,8 +163,7 @@ jobs:
               "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
               
               foreach ($table in $tables | Sort-Object Schema, Name) {
-                  $columns = ($table | Get-DbaDbTableColumn).Count
-                  "- **$($table.Schema).$($table.Name)** - $columns columns, $($table.RowCount) rows" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+                  "- **$($table.Schema).$($table.Name)** - $($table.RowCount) rows" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
               }
               "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           }
