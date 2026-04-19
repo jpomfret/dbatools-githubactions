@@ -1,6 +1,12 @@
 name: Deploy COTW Infrastructure
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'demos/databaseDevops/terraform/**'
+      - 'demos/databaseDevops/data/**'
   workflow_dispatch:
     inputs:
       deploy_dev:
@@ -35,14 +41,21 @@ jobs:
         id: set-matrix
         run: |
           environments=()
-          if [ "${{ inputs.deploy_dev }}" == "true" ]; then
+          
+          # If triggered by push, deploy to dev by default
+          if [ "${{ github.event_name }}" == "push" ]; then
             environments+=("dev")
-          fi
-          if [ "${{ inputs.deploy_test }}" == "true" ]; then
-            environments+=("test")
-          fi
-          if [ "${{ inputs.deploy_prod }}" == "true" ]; then
-            environments+=("prod")
+          else
+            # Manual workflow_dispatch - use selected inputs
+            if [ "${{ inputs.deploy_dev }}" == "true" ]; then
+              environments+=("dev")
+            fi
+            if [ "${{ inputs.deploy_test }}" == "true" ]; then
+              environments+=("test")
+            fi
+            if [ "${{ inputs.deploy_prod }}" == "true" ]; then
+              environments+=("prod")
+            fi
           fi
           
           if [ ${#environments[@]} -eq 0 ]; then
