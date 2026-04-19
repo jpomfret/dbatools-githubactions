@@ -53,10 +53,7 @@ $inst
     docker run -p 2500:1433 --volume shared:/shared:z --name mssql1 --hostname mssql1 -d dbatools/sqlinstance
     #>
 
-$cred = New-Object System.Management.Automation.PSCredential(
-    "sqladmin",
-    (ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force)
-)
+$cred = New-Object System.Management.Automation.PSCredential("sqladmin",(ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force))
 $inst = Connect-DbaInstance -SqlInstance "localhost,2500" -SqlCredential $cred
 
 # Look at the connection
