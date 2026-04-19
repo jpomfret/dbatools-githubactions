@@ -32,6 +32,7 @@ Find-DbaCommand -Pattern *backup*
 Get-Help Get-DbaDatabase
 Get-Help Get-DbaDatabase -Full
 Get-Help Get-DbaDatabase -Examples
+Get-Help Get-DbaDatabase -Online
 Get-Help Get-DbaDatabase -ShowWindow
 
 #endregion
@@ -39,23 +40,33 @@ Get-Help Get-DbaDatabase -ShowWindow
 #region connect to a SQL instance
 
 ## Connect to a SQL instance
+
+# Windows Authentication
 $inst = Connect-DbaInstance -SqlInstance sql1
 $inst
 
-<#
-# Use a container
-    $cred = New-Object System.Management.Automation.PSCredential(
-        "sqladmin",
-        (ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force)
-    )
-    $inst = Connect-DbaInstance -SqlInstance "localhost,2500" -SqlCredential $cred
-#>
+
+# SQL Authentication - for a container environment
+
+    <#
+    # Pull the dbatools sample image
+    docker run -p 2500:1433 --volume shared:/shared:z --name mssql1 --hostname mssql1 -d dbatools/sqlinstance
+    #>
+
+$cred = New-Object System.Management.Automation.PSCredential(
+    "sqladmin",
+    (ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force)
+)
+$inst = Connect-DbaInstance -SqlInstance "localhost,2500" -SqlCredential $cred
+
+# Look at the connection
+$inst
 
 #region create a database
 
 
 ## Create a database
-New-DbaDatabase -SqlInstance $inst -Name PASS_NLDemos
+New-DbaDatabase -SqlInstance $inst -Name SQLBits_Cartoons
 Get-DbaDatabase -SqlInstance $inst | Select-Object Name, CreateDate
 
 Get-Help New-DbaDatabase -ShowWindow
@@ -108,12 +119,19 @@ Get-Help Backup-DbaDatabase -ShowWindow
 
 #region scale
 
-# What if I have many instances?
-$instances = "sql1", "sql2", "sql3"
+# What if I have many instances? 
+# a list, a textfile, a csv, registered servers
+$instanceList = "localhost,2500", "localhost,2600"
+
+$instances = Connect-DbaInstance -SqlInstance $instanceList -SqlCredential $cred
+
+# view the connections
+$instances
 
 # What if I need to get information from all of them?
 Get-DbaDatabase -SqlInstance $instances |
-Select-Object SqlInstance, Name, CreateDate, AutoShrink, AutoClose
+Select-Object SqlInstance, Name, CreateDate, AutoShrink, AutoClose | 
+Format-Table -AutoSize
 
 # What if I need to get information from all of them?
 # Add a filter
@@ -140,3 +158,9 @@ Where-Object AutoShrink
     Test-DbaDbCompatibility # Do my database compatibility levels match the engine version?
 
 #endregion
+
+# AI Help?
+# dbatools MCP Server - Now Available!
+Start-Process https://github.com/dataplat/dbatools-mcp-server
+
+code .\demos\2-dbatools-mcp.md

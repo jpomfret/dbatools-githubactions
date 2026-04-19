@@ -38,6 +38,7 @@ Create simple actions in the browser
       ```text
         can you create a title and a summary for a funny issue I can add to this sample github repo
         the issue should be quite long and can be formatted in markdown. Make me laugh.
+        It should also relate to the CatsOfTheWorld environment we are working with.
         Add it to the bottom of this file in markdown so I can copy it into a GitHub issue.
       ```
 
