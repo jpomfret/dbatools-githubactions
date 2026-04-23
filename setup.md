@@ -37,6 +37,27 @@
 
 - make sure actions for big boss project are all folded up
 - run the infra action all the way through
-- run the deploy database but leave it pending approval to dev
-- connect to az dev sql in ssms??
+- run the deploy database but leave it pending approval to test
+- connect to az dev sql in ssms
   - make sure you add rule for IP in networking
+
+
+```
+CREATE TABLE [dbo].[CatVideos] (
+    [VideoId]          INT            IDENTITY (1, 1) NOT NULL,
+    [CatId]            INT            NULL,
+    [VideoTitle]       NVARCHAR (200) NOT NULL,
+    [VideoUrl]         NVARCHAR (500) NULL,
+    [Platform]         NVARCHAR (50)  DEFAULT ('YouTube') NULL,
+    [ViewCount]        BIGINT         DEFAULT ((0)) NULL,
+    [LikeCount]        INT            DEFAULT ((0)) NULL,
+    [Duration]         INT            NULL,
+    [DateUploaded]     DATE           DEFAULT (getdate()) NULL,
+    [IsViral]          BIT            DEFAULT ((0)) NULL,
+    [ThumbnailUrl]     NVARCHAR (500) NULL,
+    [Description]      NVARCHAR (MAX) NULL,
+    PRIMARY KEY CLUSTERED ([VideoId] ASC),
+    FOREIGN KEY ([CatId]) REFERENCES [dbo].[Cats] ([CatId])
+);
+GO
+```
